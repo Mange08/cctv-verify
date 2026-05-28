@@ -1,7 +1,7 @@
-// CCTV Verify — Service Worker v1.1
+// CCTV Verify — Service Worker v1.0
 // Cache app shell for offline use; time sync still requires network.
 
-const CACHE = 'cctv-verify-v1.1';
+const CACHE = 'cctv-verify-v1.0';
 const ASSETS = [
   './',
   './index.html',
