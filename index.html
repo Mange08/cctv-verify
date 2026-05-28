@@ -10,12 +10,11 @@
 <meta name="theme-color" content="#0a0a0a">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
-<link rel="apple-touch-icon-precomposed" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="/cctv-verify/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/cctv-verify/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon-precomposed" href="/cctv-verify/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/cctv-verify/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/cctv-verify/icons/icon-512.png">
 <title>CCTV Verify</title>
 <style>
   :root {
@@ -179,10 +178,30 @@
 
   .info-bar {
     font-size: 10px; color: var(--muted);
-    display: flex; justify-content: space-between; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    margin-bottom: 10px;
     letter-spacing: 0.5px;
   }
   .info-bar .v { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .info-bar .forensic-only { display: none; }
+  body.mode-full .info-bar .forensic-only { display: inline; }
+  .info-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: var(--muted);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s;
+  }
+  .info-btn:active { background: #222; color: var(--ink); }
   .src-clickable { cursor: pointer; user-select: none; -webkit-user-select: none; padding: 2px 4px; margin: -2px -4px; border-radius: 3px; transition: background 0.15s; }
   .src-clickable:active { background: #222; }
   .src-caret { font-size: 8px; color: var(--muted); margin-left: 2px; transition: transform 0.2s; display: inline-block; }
@@ -225,7 +244,7 @@
     flex: 1; overflow-y: auto; padding: 16px;
     display: flex; flex-direction: column; align-items: center; gap: 16px;
   }
-  #resultImg { max-width: 100%; max-height: 50vh; border: 1px solid #333; border-radius: 2px; -webkit-touch-callout: default; user-select: auto; -webkit-user-select: auto; }
+  #resultImg { max-width: 100%; max-height: 38vh; border: 1px solid #333; border-radius: 2px; -webkit-touch-callout: default; user-select: auto; -webkit-user-select: auto; }
   #confirmImg { max-width: 100%; max-height: 50vh; border: 1px solid rgba(91, 140, 90, 0.4); border-radius: 2px; -webkit-touch-callout: default; user-select: auto; -webkit-user-select: auto; }
 
   /* CCTV INPUT SECTION */
@@ -240,8 +259,6 @@
     text-transform: uppercase; margin-bottom: 8px;
   }
   .cctv-section .desc { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
-
-  .ocr-status { display: none; }
 
   .compute-btn {
     width: 100%; background: var(--accent); color: #0a0a0a;
@@ -338,10 +355,17 @@
     display: inline-block;
     min-width: 0.7em;
     text-align: center;
+    cursor: pointer;
+    padding: 4px 2px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
+  .cctv-display .slot:active { background: rgba(218, 165, 32, 0.15); }
   .cctv-display .slot.empty { color: #333; }
   .cctv-display .slot.cursor {
     color: var(--accent);
+    background: rgba(218, 165, 32, 0.1);
     animation: blink 1s steps(2, end) infinite;
   }
   .cctv-display .sep { color: var(--accent); margin: 0 4px; }
@@ -358,16 +382,45 @@
 
   .hint { font-size: 10px; color: var(--muted); text-align: center; letter-spacing: 1px; line-height: 1.6; max-width: 320px; }
 
+  .info-block { margin-bottom: 18px; }
+  .info-block:last-child { margin-bottom: 0; }
+  .info-block h4 {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 6px;
+  }
+  .info-block p {
+    font-size: 12px; color: var(--ink); margin: 0 0 8px;
+    line-height: 1.5; letter-spacing: 0;
+  }
+  .info-block p:last-child { margin-bottom: 0; }
+  .info-block ul {
+    font-size: 12px; color: var(--ink);
+    line-height: 1.55; letter-spacing: 0;
+    margin: 4px 0 8px; padding-left: 18px;
+  }
+  .info-block li { margin-bottom: 4px; }
+  .info-block strong { color: var(--accent); font-weight: 600; }
+  .info-src-status {
+    font-family: var(--mono); font-size: 11px;
+    background: #0a0a0a; border: 1px solid #222; border-radius: 4px;
+    padding: 8px 10px; margin: 4px 0 8px; line-height: 1.7;
+  }
+  .info-src-status .ok { color: var(--ok); }
+  .info-src-status .fail { color: var(--danger); }
+  .info-src-status .t { color: var(--accent); font-variant-numeric: tabular-nums; }
+
   .modal-footer {
     padding: 14px 18px; border-top: 1px solid #222;
-    display: flex; gap: 10px;
+    display: flex; gap: 8px;
   }
   .modal-footer button {
-    flex: 1; padding: 12px; font-family: var(--mono); font-size: 11px;
-    letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px;
-    cursor: pointer; border: none;
+    flex: 1; padding: 12px 6px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.5px; text-transform: uppercase; border-radius: 4px;
+    cursor: pointer; border: none; line-height: 1.3;
   }
   .btn-save { background: var(--accent); color: #0a0a0a; font-weight: 600; }
+  .btn-download { background: #2a2a2a; color: var(--ink); border: 1px solid #444; }
   .btn-discard { background: transparent; border: 1px solid #444; color: var(--muted); }
 
   .toast {
@@ -433,16 +486,16 @@
 
 <div class="controls">
   <div class="info-bar">
-    <span>Offset: <span class="v" id="offsetVal">—</span></span>
-    <span>Osäkerhet: <span class="v" id="rttVal">—</span></span>
-    <span class="src-clickable" id="srcToggle">Källor: <span class="v" id="srcVal">0/3</span> <span class="src-caret">▾</span></span>
+    <span class="forensic-only"><span class="lbl-inline">Offset:</span> <span class="v" id="offsetVal">—</span></span>
+    <span class="forensic-only"><span class="lbl-inline">Osäkerhet:</span> <span class="v" id="rttVal">—</span></span>
+    <span class="src-clickable" id="srcToggle">Källor: <span class="v" id="srcVal">0/2</span> <span class="src-caret">▾</span></span>
+    <button class="info-btn" id="infoBtn" aria-label="Förklaring" title="Vad betyder allt detta?">?</button>
   </div>
   <div class="src-list" id="srcList"></div>
 
   <div class="mode-switch">
-    <button data-mode="min" class="active">Minimal</button>
-    <button data-mode="std">Standard</button>
-    <button data-mode="full">Full forensik</button>
+    <button data-mode="std" class="active">Standard</button>
+    <button data-mode="full">Forensik</button>
   </div>
 
   <div id="startWrap">
@@ -514,11 +567,13 @@
     </div>
 
     <div class="hint">
-      Tryck "Spara till Foton" och välj "Spara bild" i delningsmenyn.
+      <strong>Spara till Foton:</strong> hamnar i kamerarullen (iOS tar bort EXIF-metadata).<br>
+      <strong>Ladda ner:</strong> sparar till Filer-appen med metadata (EXIF) bevarad — välj denna för forensiskt bruk.
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn-discard" id="discardBtn">Släng</button>
+    <button class="btn-discard" id="discardBtn">Ta ny bild</button>
+    <button class="btn-download" id="downloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Ladda ner</button>
     <button class="btn-save" id="saveBtn">Spara till Foton</button>
   </div>
 </div>
@@ -532,22 +587,62 @@
   <div class="modal-body">
     <img id="confirmImg" alt="Sparad bild">
     <div class="cctv-section" style="background: rgba(91, 140, 90, 0.08); border-color: rgba(91, 140, 90, 0.4);">
-      <div class="lbl" style="color: var(--ok);">Bilden delades</div>
-      <div class="desc">Om du valde <strong>"Spara bild"</strong> i delningsmenyn finns bilden nu i din Foton-app. Om du valde något annat (t.ex. avbröt eller delade vidare) finns bilden där istället.</div>
+      <div class="lbl" style="color: var(--ok);">Bilden sparad</div>
+      <div class="desc">Du kan spara samma bild på fler sätt nedan — t.ex. både till Foton och till Filer (med EXIF-metadata). Bilden ligger kvar tills du trycker "Klar".</div>
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn-save" id="confirmOkBtn">OK</button>
+    <button class="btn-download" id="confirmDownloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Ladda ner</button>
+    <button class="btn-download" id="confirmSaveBtn" title="Spara till Foton (utan EXIF)">Till Foton</button>
+    <button class="btn-save" id="confirmOkBtn">Klar</button>
   </div>
 </div>
 
 <div class="toast" id="toast">Tid synkad</div>
 
+<!-- Info / förklaringsmodal -->
+<div class="modal" id="infoModal">
+  <div class="modal-header">
+    <h3>Vad betyder allt detta?</h3>
+    <button class="modal-close" id="infoClose">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="info-block">
+      <h4>Offset</h4>
+      <p>Skillnaden mellan din telefons klocka och de externa tidskällornas medianvärde. Om offset är +1.234s betyder det att telefonen ligger 1.234 sekunder före den verkliga tiden. Appen kompenserar automatiskt, så tiden som visas och bränns in är den korrigerade ("verkliga") tiden — inte telefonens råa klocka.</p>
+    </div>
+    <div class="info-block">
+      <h4>Osäkerhet (±ms)</h4>
+      <p>Hur exakt synken är. Beräknas som halva round-trip-time mot tidskällan — alltså hur länge svaret tog på resan tillbaka. Lägre värde är bättre. På 4G/5G ligger det vanligtvis under 100 ms; över wifi ofta under 50 ms.</p>
+    </div>
+    <div class="info-block">
+      <h4>Källor</h4>
+      <p>Externa servrar som ger en oberoende tidsstämpel. Appen frågar båda parallellt och tar medianvärdet — så ingen enskild källa kan dra tiden snett. Källor som används:</p>
+      <ul>
+        <li><strong>Cloudflare</strong> — ett av världens största nätverksföretag, tid hämtas med millisekundprecision från deras atomursynkade servrar</li>
+        <li><strong>TimeAPI</strong> — dedikerad tidsserver synkad mot UTC</li>
+      </ul>
+      <p>Aktuell status:</p>
+      <div id="infoSrcStatus" class="info-src-status">Ej synkad än.</div>
+      <p>"2/2" betyder att båda källor svarade OK. Om en faller ut kompenserar appen med den andra. Synk körs om var 5:e minut och varje gång appen återgår från bakgrund.</p>
+    </div>
+    <div class="info-block">
+      <h4>Standard vs Forensik</h4>
+      <p><strong>Standard:</strong> visar verklig tid och datum på bilden. Lämpligt för vardagsbruk när du bara vill dokumentera klockslag.</p>
+      <p><strong>Forensik:</strong> lägger till UTC, offset, osäkerhet och vilka källor som användes — för dokumentation där tidens bevisvärde behöver kunna granskas.</p>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-save" id="infoOkBtn">OK</button>
+  </div>
+</div>
+
 <canvas id="canvas" style="display:none"></canvas>
 
+<script src="piexif.js"></script>
 <script>
 /* ============================================
-   CCTV VERIFY PWA v1.0
+   CCTV VERIFY 1 — PWA
    ============================================ */
 
 const $ = (id) => document.getElementById(id);
@@ -565,7 +660,7 @@ let timeOffset = 0;
 let lastSyncRTT = null;
 let syncSources = [];
 let currentFacing = 'environment';
-let burnMode = 'min';
+let burnMode = 'std';
 let lastSyncAt = null;
 let lastCaptureMs = null;   // for CCTV-comparison
 let lastCaptureBlob = null; // for sharing
@@ -584,17 +679,6 @@ const TIME_SOURCES = [
       // fallback till Date-header
       const dh = res.headers.get('date');
       return dh ? new Date(dh).getTime() : null;
-    }
-  },
-  {
-    name: 'WorldTime',
-    url: 'https://worldtimeapi.org/api/timezone/Etc/UTC',
-    parse: async (res) => {
-      const j = await res.json();
-      // unixtime är sekunder, utc_datetime är ISO med ms
-      if (j.utc_datetime) return new Date(j.utc_datetime).getTime();
-      if (j.unixtime) return j.unixtime * 1000;
-      return null;
     }
   },
   {
@@ -628,7 +712,7 @@ async function probeSource(src) {
     }
     const midClient = Date.now() - rtt / 2;
     const offset = serverMs - midClient;
-    return { name: src.name, offset, rtt, ok: true };
+    return { name: src.name, offset, rtt, serverMs, ok: true };
   } catch (e) {
     return { name: src.name, ok: false, reason: e.message };
   }
@@ -655,7 +739,7 @@ async function syncTime() {
 
   timeOffset = median(good.map(g => g.offset));
   lastSyncRTT = good.reduce((a,g) => a + g.rtt, 0) / good.length;
-  syncSources = results.map(r => ({ name: r.name, ok: r.ok }));
+  syncSources = results.map(r => ({ name: r.name, ok: r.ok, serverMs: r.ok ? r.serverMs : null }));
   lastSyncAt = Date.now();
 
   setStatus('ok', `Synkad · ${good.length}/${TIME_SOURCES.length}`);
@@ -750,13 +834,9 @@ function renderOverlay() {
   const t = trueNow();
   overlayTime.textContent = fmtTime(t);
 
-  if (burnMode === 'min') {
+  if (burnMode === 'std') {
     overlayLabel.textContent = `VERKLIG TID · ${fmtTzOffset()}`;
-    overlayMeta.innerHTML = '';
-  } else if (burnMode === 'std') {
-    overlayLabel.textContent = `VERKLIG TID · ${fmtTzOffset()}`;
-    overlayMeta.innerHTML =
-      `<strong>${fmtDate(t)}</strong> &nbsp;·&nbsp; Offset: ${(timeOffset/1000).toFixed(3)}s`;
+    overlayMeta.innerHTML = `<strong>${fmtDate(t)}</strong>`;
   } else {
     overlayLabel.textContent = `FORENSISK TIDSTÄMPEL · ${fmtTzOffset()}`;
     const okSrc = syncSources.filter(s => s.ok).map(s => s.name).join(', ') || 'ingen';
@@ -1047,11 +1127,9 @@ function drawBurnedOverlay(ctx, W, H, captureMs, extraLines = null) {
   let lines = [];
   let labelText;
 
-  if (burnMode === 'min') {
+  if (burnMode === 'std') {
     labelText = `VERKLIG TID · ${fmtTzOffset()}`;
-  } else if (burnMode === 'std') {
-    labelText = `VERKLIG TID · ${fmtTzOffset()}`;
-    lines.push(`${fmtDate(captureMs)}   Offset: ${(timeOffset/1000).toFixed(3)}s`);
+    lines.push(`${fmtDate(captureMs)}`);
   } else {
     labelText = `FORENSISK TIDSTÄMPEL · ${fmtTzOffset()}`;
     lines.push(`${fmtDate(captureMs)}    UTC: ${fmtUTC(captureMs)}`);
@@ -1267,10 +1345,14 @@ function computeCctvDiff(burnIn) {
 
   const direction = diff >= 0 ? 'före' : 'efter';
   const durationStr = fmtDuration(diff);
+  const cctvStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  // Spara jämförelsen för EXIF
+  lastCctvComparison = { cctvStr, direction, durationStr };
 
   const result = $('diffResult');
   result.innerHTML =
-    `CCTV-tid: <strong>${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</strong> (lokal)<br>` +
+    `CCTV-tid: <strong>${cctvStr}</strong> (lokal)<br>` +
     `Verklig tid: <strong>${fmtLocalTime(realLocalMs)}.${String(new Date(realLocalMs).getMilliseconds()).padStart(3,'0')}</strong> (lokal)<br>` +
     `<span class="big">CCTV-systemet går ${durationStr} ${direction} verklig tid</span>`;
   result.classList.add('show');
@@ -1285,16 +1367,14 @@ function computeCctvDiff(burnIn) {
     let extraLines = null;
     if (burnIn) {
       extraLines = [
-        `CCTV-tid: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} (manuell)`,
+        `CCTV-tid: ${cctvStr}`,
         `CCTV ${direction} verklig tid: ${durationStr}`
       ];
     }
     drawBurnedOverlay(ctx, vw, vh, lastCaptureMs, extraLines);
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    $('resultImg').src = dataUrl;
-    $('saveBtn').dataset.url = dataUrl;
-    canvas.toBlob((blob) => { lastCaptureBlob = blob; }, 'image/jpeg', 0.92);
+    finalizeImage(dataUrl, lastCaptureMs);
   }
 
   toast(burnIn ? 'Differens beräknad och inbränd' : 'Differens beräknad');
@@ -1303,6 +1383,110 @@ function computeCctvDiff(burnIn) {
 /* ---------- CAPTURE (med ren frame för re-burn) ---------- */
 let originalFrameData = null;
 let burnDiffEnabled = true;
+let lastCctvComparison = null; // {cctvStr, direction, durationStr} eller null
+
+/* ---------- EXIF METADATA ---------- */
+// Formaterar ms → "YYYY:MM:DD HH:MM:SS" (EXIF-standard, lokal tid)
+function exifDateTime(ms) {
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}:${p(d.getMonth()+1)}:${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function exifTzOffset(ms) {
+  // Returnerar t.ex. "+02:00"
+  const off = -new Date(ms).getTimezoneOffset(); // minuter, positivt öster om UTC
+  const sign = off >= 0 ? '+' : '-';
+  const a = Math.abs(off);
+  return `${sign}${String(Math.floor(a/60)).padStart(2,'0')}:${String(a%60).padStart(2,'0')}`;
+}
+function timeWithMs(ms) {
+  const d = new Date(ms);
+  return d.toLocaleTimeString('sv-SE') + '.' + String(d.getMilliseconds()).padStart(3, '0');
+}
+
+// Bygger beskrivningstexten som hamnar i ImageDescription + UserComment
+function buildExifDescription(captureMs) {
+  const lines = [];
+  lines.push(`Verklig tid (synkad): ${exifDateTime(captureMs)} lokal (UTC${exifTzOffset(captureMs)})`);
+
+  if (burnMode === 'full') {
+    const utcMs = captureMs;
+    const ud = new Date(utcMs);
+    const p = (n) => String(n).padStart(2,'0');
+    const utcStr = `${ud.getUTCFullYear()}-${p(ud.getUTCMonth()+1)}-${p(ud.getUTCDate())} ${p(ud.getUTCHours())}:${p(ud.getUTCMinutes())}:${p(ud.getUTCSeconds())}`;
+    lines.push(`UTC: ${utcStr}`);
+    lines.push(`Offset mot enhetsklocka: ${(timeOffset/1000).toFixed(3)}s`);
+    lines.push(`Osäkerhet: ±${Math.round((lastSyncRTT||0)/2)} ms`);
+  }
+
+  // Tidskällor med faktiska tider (alternativ B)
+  const okSources = syncSources.filter(s => s.ok && s.serverMs);
+  if (okSources.length) {
+    lines.push('Tidskällor:');
+    okSources.forEach(s => {
+      lines.push(`  ${s.name}: ${timeWithMs(s.serverMs)}`);
+    });
+  } else {
+    lines.push('Tidskällor: ingen (offline-läge)');
+  }
+
+  // CCTV-jämförelse
+  if (lastCctvComparison) {
+    lines.push(`CCTV-tid (manuell): ${lastCctvComparison.cctvStr}`);
+    lines.push(`CCTV ligger ${lastCctvComparison.durationStr} ${lastCctvComparison.direction} verklig tid`);
+  }
+
+  return lines.join('\n');
+}
+
+// Tar en JPEG-dataUrl och returnerar en ny dataUrl med EXIF inbäddad
+function injectExif(dataUrl, captureMs) {
+  try {
+    if (typeof piexif === 'undefined') return dataUrl;
+    const desc = buildExifDescription(captureMs);
+    const zeroth = {};
+    const exif = {};
+    zeroth[piexif.ImageIFD.Software] = 'CCTV Verify 1';
+    zeroth[piexif.ImageIFD.DateTime] = exifDateTime(captureMs);
+    zeroth[piexif.ImageIFD.ImageDescription] = desc;
+    exif[piexif.ExifIFD.DateTimeOriginal] = exifDateTime(captureMs);
+    exif[piexif.ExifIFD.DateTimeDigitized] = exifDateTime(captureMs);
+    // UserComment kräver en teckenkods-prefix enligt EXIF-spec; piexif hanterar ASCII
+    exif[piexif.ExifIFD.UserComment] = 'ASCII\0\0\0' + desc.replace(/[^\x00-\x7F]/g, '?');
+    try { exif[piexif.ExifIFD.OffsetTimeOriginal] = exifTzOffset(captureMs); } catch(e){}
+
+    const exifObj = { '0th': zeroth, 'Exif': exif };
+    const exifBytes = piexif.dump(exifObj);
+    return piexif.insert(exifBytes, dataUrl);
+  } catch (e) {
+    console.warn('EXIF-injektion misslyckades:', e);
+    return dataUrl; // fall tillbaka på bild utan EXIF
+  }
+}
+
+// Konverterar dataUrl → Blob (för delning)
+function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)[1];
+  const bin = atob(parts[1]);
+  const len = bin.length;
+  const arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// Central funktion: bygg slutbild med EXIF, sätt resultatbild + blob
+function finalizeImage(rawDataUrl, captureMs) {
+  const withExif = injectExif(rawDataUrl, captureMs);
+  $('resultImg').src = withExif;
+  $('saveBtn').dataset.url = withExif;
+  $('saveBtn').dataset.ts = fmtTime(captureMs).replace(/[:.]/g,'-');
+  try {
+    lastCaptureBlob = dataUrlToBlob(withExif);
+  } catch (e) {
+    console.warn('Blob-konvertering misslyckades:', e);
+  }
+}
 
 capture = function() {
   if (!mediaStream) return;
@@ -1323,12 +1507,9 @@ capture = function() {
 
   drawBurnedOverlay(ctx, vw, vh, captureMs);
 
+  lastCctvComparison = null; // ny bild → ingen jämförelse än
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  $('resultImg').src = dataUrl;
-  $('saveBtn').dataset.url = dataUrl;
-  $('saveBtn').dataset.ts = fmtTime(captureMs).replace(/[:.]/g,'-');
-
-  canvas.toBlob((blob) => { lastCaptureBlob = blob; }, 'image/jpeg', 0.92);
+  finalizeImage(dataUrl, captureMs);
 
   // Reset CCTV-input
   resetCctvInput();
@@ -1352,7 +1533,7 @@ function showConfirmModal() {
   $('confirmModal').classList.add('open');
 }
 
-async function saveImage() {
+async function saveImage(keepOpen) {
   const url = $('saveBtn').dataset.url;
   const ts = $('saveBtn').dataset.ts;
   const filename = `cctv-verify-${ts}.jpg`;
@@ -1364,8 +1545,7 @@ async function saveImage() {
       try {
         await navigator.share({ files: [file], title: 'CCTV Verify' });
         // Web Share API kan inte säga om användaren valde "Spara bild" eller något annat
-        // Vi visar bekräftelse-modal som förklarar
-        showConfirmModal();
+        if (!keepOpen) showConfirmModal();
         return;
       } catch (e) {
         if (e.name === 'AbortError') {
@@ -1391,25 +1571,88 @@ async function saveImage() {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => {
-      showConfirmModal();
-    }, 600);
+    if (!keepOpen) {
+      setTimeout(() => {
+        showConfirmModal();
+      }, 600);
+    }
   } catch (e) {
     toast('✗ Sparning misslyckades: ' + (e.message || e.name), 'err');
   }
 }
 
-/* ---------- UI WIRING ---------- */
+// Ladda ner direkt (bevarar EXIF — går till Filer-appen på iOS, ej via Foton)
+async function downloadImage(keepOpen) {
+  const url = $('saveBtn').dataset.url;
+  const ts = $('saveBtn').dataset.ts;
+  const filename = `cctv-verify-${ts}.jpg`;
+  if (!url) { toast('Ingen bild att ladda ner', 'err'); return; }
+
+  try {
+    // På iOS Safari: försök dela som fil till Filer (bevarar EXIF), annars vanlig nedladdning
+    const blob = lastCaptureBlob || dataUrlToBlob(url);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 1000);
+    toast('Laddas ner med metadata — välj "Spara i Filer"', 'ok');
+    if (!keepOpen) setTimeout(() => showConfirmModal(), 600);
+  } catch (e) {
+    toast('✗ Nedladdning misslyckades: ' + (e.message || e.name), 'err');
+  }
+}
 $('startBtn').addEventListener('click', startCamera);
 $('shutterBtn').addEventListener('click', () => capture());
 $('switchBtn').addEventListener('click', switchCamera);
 $('resyncBtn').addEventListener('click', syncTime);
-$('saveBtn').addEventListener('click', saveImage);
-$('discardBtn').addEventListener('click', () => $('modal').classList.remove('open'));
-$('modalClose').addEventListener('click', () => $('modal').classList.remove('open'));
+$('saveBtn').addEventListener('click', () => saveImage(false));
+$('downloadBtn').addEventListener('click', () => downloadImage(false));
+$('discardBtn').addEventListener('click', () => {
+  $('modal').classList.remove('open');
+  resetCctvInput();
+  $('diffResult').textContent = '';
+});
+$('modalClose').addEventListener('click', () => {
+  $('modal').classList.remove('open');
+  resetCctvInput();
+  $('diffResult').textContent = '';
+});
 $('confirmClose').addEventListener('click', () => $('confirmModal').classList.remove('open'));
 $('confirmOkBtn').addEventListener('click', () => $('confirmModal').classList.remove('open'));
+$('confirmDownloadBtn').addEventListener('click', () => downloadImage(true));
+$('confirmSaveBtn').addEventListener('click', () => saveImage(true));
 $('computeBtn').addEventListener('click', () => computeCctvDiff(burnDiffEnabled));
+
+// Info-modal
+$('infoBtn').addEventListener('click', () => {
+  renderInfoSrcStatus();
+  $('infoModal').classList.add('open');
+});
+$('infoClose').addEventListener('click', () => $('infoModal').classList.remove('open'));
+$('infoOkBtn').addEventListener('click', () => $('infoModal').classList.remove('open'));
+
+function renderInfoSrcStatus() {
+  const el = $('infoSrcStatus');
+  if (!el) return;
+  if (!syncSources.length) {
+    el.textContent = 'Ej synkad än.';
+    return;
+  }
+  el.innerHTML = syncSources.map(s => {
+    if (s.ok && s.serverMs) {
+      const d = new Date(s.serverMs + (timeOffset - timeOffset)); // serverMs är redan absolut
+      const local = new Date(s.serverMs);
+      const tStr = local.toLocaleTimeString('sv-SE') + '.' + String(local.getMilliseconds()).padStart(3,'0');
+      return `<div><span class="ok">✓</span> ${s.name}: <span class="t">${tStr}</span></div>`;
+    }
+    return `<div><span class="fail">✗</span> ${s.name}: kunde ej nås</div>`;
+  }).join('');
+}
 
 $('srcToggle').addEventListener('click', () => {
   $('srcToggle').classList.toggle('open');
@@ -1440,6 +1683,35 @@ document.querySelectorAll('#numpad button').forEach(btn => {
   });
 });
 
+// Tap på en specifik siffra för att flytta markören dit
+document.querySelectorAll('#cctvDisplay .slot').forEach(slot => {
+  slot.addEventListener('click', (e) => {
+    e.preventDefault();
+    const pos = parseInt(slot.dataset.pos, 10);
+    if (isNaN(pos)) return;
+    cctvCursor = pos;
+    // Töm den tryckta positionen så nästa knapptryck skriver där
+    cctvDigits[pos] = null;
+    renderCctvDisplay();
+    updateComputeBtnState();
+    if (navigator.vibrate) navigator.vibrate(8);
+    // Scrolla så hela inmatningen (siffror + numpad + spara-knapp) blir synlig
+    scrollInputIntoView();
+  });
+});
+
+// Scrollar CCTV-sektionen så att numpaden blir synlig utan att man drar
+function scrollInputIntoView() {
+  const numpad = document.getElementById('numpad');
+  const computeBtn = document.getElementById('computeBtn');
+  if (!numpad) return;
+  requestAnimationFrame(() => {
+    // Scrolla så numpaden + räkna-knappen syns; block:'end' drar upp dem i vy
+    const target = computeBtn || numpad;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 // Initial render av display
 renderCctvDisplay();
 
@@ -1448,6 +1720,7 @@ document.querySelectorAll('.mode-switch button').forEach(b => {
     document.querySelectorAll('.mode-switch button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     burnMode = b.dataset.mode;
+    document.body.classList.toggle('mode-full', burnMode === 'full');
     renderOverlay();
   });
 });
