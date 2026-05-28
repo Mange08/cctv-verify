@@ -567,14 +567,14 @@
     </div>
 
     <div class="hint">
-      <strong>Spara till Foton:</strong> hamnar i kamerarullen (iOS tar bort EXIF-metadata).<br>
-      <strong>Ladda ner:</strong> sparar till Filer-appen med metadata (EXIF) bevarad — välj denna för forensiskt bruk.
+      <strong>Spara i Filer</strong> behåller tidsstämpelns metadata (EXIF) — välj denna för dokumentation.<br>
+      <strong>Spara i Bilder</strong> lägger bilden i kamerarullen (iOS tar bort metadata).
     </div>
   </div>
   <div class="modal-footer">
     <button class="btn-discard" id="discardBtn">Ta ny bild</button>
-    <button class="btn-download" id="downloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Ladda ner</button>
-    <button class="btn-save" id="saveBtn">Spara till Foton</button>
+    <button class="btn-download" id="downloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Spara i Filer</button>
+    <button class="btn-save" id="saveBtn">Spara i Bilder</button>
   </div>
 </div>
 
@@ -592,8 +592,8 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn-download" id="confirmDownloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Ladda ner</button>
-    <button class="btn-download" id="confirmSaveBtn" title="Spara till Foton (utan EXIF)">Till Foton</button>
+    <button class="btn-download" id="confirmDownloadBtn" title="Sparar till Filer-appen med metadata (EXIF) bevarad">Spara i Filer</button>
+    <button class="btn-download" id="confirmSaveBtn" title="Spara i Bilder (utan EXIF)">Spara i Bilder</button>
     <button class="btn-save" id="confirmOkBtn">Klar</button>
   </div>
 </div>
@@ -664,6 +664,7 @@ let burnMode = 'std';
 let lastSyncAt = null;
 let lastCaptureMs = null;   // for CCTV-comparison
 let lastCaptureBlob = null; // for sharing
+let savedSomething = false; // om användaren tryckt på en spara-knapp för aktuell bild
 
 /* ---------- TIME SYNC ---------- */
 // CORS-vänliga endpoints som returnerar tid i body, inte bara Date-header
@@ -1508,6 +1509,7 @@ capture = function() {
   drawBurnedOverlay(ctx, vw, vh, captureMs);
 
   lastCctvComparison = null; // ny bild → ingen jämförelse än
+  savedSomething = false; // ny bild → inget sparat än
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   finalizeImage(dataUrl, captureMs);
 
@@ -1536,7 +1538,7 @@ function showConfirmModal() {
 async function saveImage(keepOpen) {
   const url = $('saveBtn').dataset.url;
   const ts = $('saveBtn').dataset.ts;
-  const filename = `cctv-verify-${ts}.jpg`;
+  const filename = `tidsdokumentation-${ts}.jpg`;
 
   // Try Web Share API with file (works on iOS Safari 15+)
   if (navigator.canShare && lastCaptureBlob) {
@@ -1545,6 +1547,7 @@ async function saveImage(keepOpen) {
       try {
         await navigator.share({ files: [file], title: 'CCTV Verify' });
         // Web Share API kan inte säga om användaren valde "Spara bild" eller något annat
+        savedSomething = true;
         if (!keepOpen) showConfirmModal();
         return;
       } catch (e) {
@@ -1571,6 +1574,7 @@ async function saveImage(keepOpen) {
     document.body.appendChild(a);
     a.click();
     a.remove();
+    savedSomething = true;
     if (!keepOpen) {
       setTimeout(() => {
         showConfirmModal();
@@ -1585,25 +1589,44 @@ async function saveImage(keepOpen) {
 async function downloadImage(keepOpen) {
   const url = $('saveBtn').dataset.url;
   const ts = $('saveBtn').dataset.ts;
-  const filename = `cctv-verify-${ts}.jpg`;
-  if (!url) { toast('Ingen bild att ladda ner', 'err'); return; }
+  const filename = `tidsdokumentation-${ts}.jpg`;
+  if (!url) { toast('Ingen bild att spara', 'err'); return; }
 
+  const blob = lastCaptureBlob || dataUrlToBlob(url);
+
+  // Föredra delningsbladet på iOS → ger "Spara i Filer" direkt (ingen förhandsvisning)
+  if (navigator.canShare && blob) {
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        savedSomething = true;
+        if (!keepOpen) showConfirmModal();
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') {
+          toast('Avbrutet — inget sparades', 'warn');
+          return;
+        }
+        console.warn('Share misslyckades, faller tillbaka på nedladdning:', e);
+        // Fall through till vanlig nedladdning
+      }
+    }
+  }
+
+  // Fallback för enheter utan delningsblad: vanlig nedladdning
   try {
-    // På iOS Safari: försök dela som fil till Filer (bevarar EXIF), annars vanlig nedladdning
-    const blob = lastCaptureBlob || dataUrlToBlob(url);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }, 1000);
-    toast('Laddas ner med metadata — välj "Spara i Filer"', 'ok');
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    savedSomething = true;
+    toast('Sparad med metadata', 'ok');
     if (!keepOpen) setTimeout(() => showConfirmModal(), 600);
   } catch (e) {
-    toast('✗ Nedladdning misslyckades: ' + (e.message || e.name), 'err');
+    toast('✗ Sparning misslyckades: ' + (e.message || e.name), 'err');
   }
 }
 $('startBtn').addEventListener('click', startCamera);
@@ -1613,11 +1636,17 @@ $('resyncBtn').addEventListener('click', syncTime);
 $('saveBtn').addEventListener('click', () => saveImage(false));
 $('downloadBtn').addEventListener('click', () => downloadImage(false));
 $('discardBtn').addEventListener('click', () => {
+  if (!savedSomething) {
+    if (!confirm('Du har inte sparat bilden än. Vill du verkligen ta en ny bild och kasta den här?')) return;
+  }
   $('modal').classList.remove('open');
   resetCctvInput();
   $('diffResult').textContent = '';
 });
 $('modalClose').addEventListener('click', () => {
+  if (!savedSomething) {
+    if (!confirm('Du har inte sparat bilden än. Vill du verkligen stänga?')) return;
+  }
   $('modal').classList.remove('open');
   resetCctvInput();
   $('diffResult').textContent = '';
@@ -1758,6 +1787,22 @@ if ('serviceWorker' in navigator) {
 syncTime();
 setInterval(syncTime, 5 * 60 * 1000);
 checkInstallHint();
+
+// Autostarta kameran om appen körs från hemskärmen (standalone PWA).
+// I vanlig Safari-flik kräver iOS ett tryck först, så där hoppar vi över.
+function maybeAutoStartCamera() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (isStandalone) {
+    // Liten fördröjning så sidan hunnit rendera klart
+    setTimeout(() => {
+      startCamera().catch(err => {
+        console.warn('Autostart av kamera misslyckades, väntar på knapptryck:', err);
+      });
+    }, 400);
+  }
+}
+maybeAutoStartCamera();
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
